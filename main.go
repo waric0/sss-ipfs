@@ -16,28 +16,53 @@ func main() {
 	flag.Parse()
 	filepath := flag.Arg(0)
 	stdin := bufio.NewScanner(os.Stdin)
-	var shares, minimum int
+	var publicKeys []string
+	var sharesNum, minimumNum, publicKeyNum int
 	var err error
 
-	fmt.Print("シェアの数を入力してください(2以上) : ")
+	fmt.Print("1番目の公開鍵を入力してください(doneで終了) : ")
 	for stdin.Scan() {
-		shares, err = strconv.Atoi(stdin.Text())
+		publicKey := stdin.Text()
 		if err != nil {
 			log.Fatal(err)
 		}
-		if shares > 1 {
+		if publicKey == "done" {
+			if publicKeyNum == 0 {
+				fmt.Println("公開鍵が見つかりません")
+			} else {
+				fmt.Println("以下の公開鍵を使用します")
+				for i := 0; i < publicKeyNum; i++ {
+					fmt.Println(publicKeys[i])
+				}
+				break
+			}
+		} else {
+			publicKeys = append(publicKeys, publicKey)
+			publicKeyNum = len(publicKeys)
+		}
+		index := strconv.Itoa(publicKeyNum + 1)
+		fmt.Print(index + "番目の公開鍵を入力してください(doneで終了) : ")
+	}
+
+	fmt.Print("シェアの数を入力してください(2以上かつ公開鍵の数以上) : ")
+	for stdin.Scan() {
+		sharesNum, err = strconv.Atoi(stdin.Text())
+		if err != nil {
+			log.Fatal(err)
+		}
+		if sharesNum >= publicKeyNum && sharesNum > 1 {
 			break
 		}
-		fmt.Print("正しいシェアの数を入力してください(2以上) : ")
+		fmt.Print("正しいシェアの数を入力してください(2以上かつ公開鍵の数以上) : ")
 	}
 
 	fmt.Print("閾値を入力してください(2以上かつシェアの数以下) : ")
 	for stdin.Scan() {
-		minimum, err = strconv.Atoi(stdin.Text())
+		minimumNum, err = strconv.Atoi(stdin.Text())
 		if err != nil {
 			log.Fatal(err)
 		}
-		if shares >= minimum && minimum > 1 {
+		if sharesNum >= minimumNum && minimumNum > 1 {
 			break
 		}
 		fmt.Print("正しい閾値を入力してください(2以上かつシェアの数以下) : ")
@@ -54,12 +79,12 @@ func main() {
 	}
 
 	// シェアの作成
-	created, err := sssa.Create(minimum, shares, string(raw))
+	created, err := sssa.Create(minimumNum, sharesNum, string(raw))
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	for i := 0; i < shares; i++ {
+	for i := 0; i < sharesNum; i++ {
 		content := []byte(created[i])
 		index := strconv.Itoa(i + 1)
 		err := ioutil.WriteFile("share"+index, content, 0755)
