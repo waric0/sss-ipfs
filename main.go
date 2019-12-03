@@ -35,10 +35,15 @@ func main() {
 		log.Fatal(err)
 	}
 
+	err = os.Mkdir("temp", 0755)
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	for i := 0; i < shareNum; i++ {
 		content := []byte(created[i])
 		index := strconv.Itoa(i + 1)
-		err := ioutil.WriteFile("share"+index, content, 0755)
+		err := ioutil.WriteFile("temp/share"+index, content, 0755)
 		if err != nil {
 			log.Fatal(err)
 		}
