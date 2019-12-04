@@ -2,6 +2,7 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"io/ioutil"
 	"log"
 	"os"
@@ -18,6 +19,9 @@ func main() {
 	pubKeyNum := len(pubKeys)
 	shareNum := askShareNum(pubKeyNum)
 	minNum := askMinNum(shareNum)
+	manageShareNums := askShareManagers(pubKeys, shareNum, minNum)
+
+	fmt.Println(manageShareNums)
 
 	file, err := os.Open(filepath)
 	if err != nil {
