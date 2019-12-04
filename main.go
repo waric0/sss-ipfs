@@ -35,9 +35,11 @@ func main() {
 		log.Fatal(err)
 	}
 
-	err = os.Mkdir("temp", 0755)
-	if err != nil {
-		log.Fatal(err)
+	if _, err := os.Stat("temp"); os.IsNotExist(err) {
+		err = os.Mkdir("temp", 0755)
+		if err != nil {
+			log.Fatal(err)
+		}
 	}
 
 	for i := 0; i < shareNum; i++ {
