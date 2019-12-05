@@ -19,21 +19,20 @@ type keyManager struct {
 func main() {
 	flag.Parse()
 	commands := flag.Arg(0)
-	filepath := flag.Arg(1)
 
 	if commands == "upload" {
-		upload(filepath)
+		upload()
 	} else if commands == "download" {
-		download(filepath)
+		download()
 	} else {
 		fmt.Printf("エラー : 適切なコマンドを入力してください\n")
 		fmt.Printf("例 : \n")
-		fmt.Printf("  sss-ipfs upload <filepath>\n")
-		fmt.Printf("  sss-ipfs download <filepath>\n")
+		fmt.Printf("  sss-ipfs upload\n")
+		fmt.Printf("  sss-ipfs download\n")
 	}
 }
 
-func upload(filepath string) {
+func upload() {
 
 	var managers []keyManager
 
@@ -41,10 +40,9 @@ func upload(filepath string) {
 	shareNum := askShareNum(managers)
 	minNum := askMinNum(shareNum)
 	managers = askShareManagers(managers, shareNum, minNum)
+	filePath := askFilePath()
 
-	fmt.Println(managers)
-
-	file, err := os.Open(filepath)
+	file, err := os.Open(filePath)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -77,6 +75,6 @@ func upload(filepath string) {
 	}
 }
 
-func download(filepath string) {
+func download() {
 
 }

@@ -137,3 +137,20 @@ func askShareManagers(managers []keyManager, shareNum int, minNum int) []keyMana
 
 	return managers
 }
+
+func askFilePath() string {
+	var filePath string
+	stdin := bufio.NewScanner(os.Stdin)
+
+	fmt.Print("アップロードするファイルのパスを入力してください : ")
+	for stdin.Scan() {
+		filePath = stdin.Text()
+		_, err := os.Stat(filePath)
+		if err == nil {
+			break
+		}
+		fmt.Print("正しいファイルのパスを入力してください : ")
+	}
+
+	return filePath
+}
