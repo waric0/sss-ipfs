@@ -9,18 +9,16 @@ import (
 )
 
 // 暗号化で利用する公開鍵の数を入力
-func askPubKeys() []string {
+func askPubKeys(managers []keyManager) []keyManager {
 
-	var (
-		pubKeys   []string
-		pubKeyNum int
-	)
+	var pubKeyNum int = len(managers)
+
 	stdin := bufio.NewScanner(os.Stdin)
 
 	fmt.Print("1番目の公開鍵を入力してください(doneで終了) : ")
 	for stdin.Scan() {
-		pubKey := stdin.Text()
-		if pubKey == "done" {
+		input := stdin.Text()
+		if input == "done" {
 			if pubKeyNum == 0 {
 				fmt.Println("公開鍵が見つかりません")
 			} else {
@@ -28,27 +26,34 @@ func askPubKeys() []string {
 				fmt.Println("以下" + num + "個の公開鍵を使用します(冒頭15文字のみ表示)")
 				for i := 0; i < pubKeyNum; i++ {
 					index := strconv.Itoa(i + 1)
-					fmt.Println("PublicKey" + index + " : " + pubKeys[i][:15] + "...")
+					pubKey := managers[i].publicKey
+					if len(pubKey) > 15 {
+						fmt.Println("PublicKey" + index + " : " + pubKey[:15] + "...")
+					} else {
+						fmt.Println("PublicKey" + index + " : " + pubKey)
+					}
 				}
 				break
 			}
 		} else {
-			pubKeys = append(pubKeys, pubKey)
-			pubKeyNum = len(pubKeys)
+			manager := keyManager{publicKey: input, manageShareNum: 0}
+			managers = append(managers, manager)
+			pubKeyNum = len(managers)
 		}
 		index := strconv.Itoa(pubKeyNum + 1)
 		fmt.Print(index + "番目の公開鍵を入力してください(doneで終了) : ")
 	}
 
-	return pubKeys
+	return managers
 }
 
 // 秘密分散法で利用するシェアの数を入力
-func askShareNum(pubKeyNum int) int {
+func askShareNum(managers []keyManager) int {
 
 	var (
-		shareNum int
-		err      error
+		pubKeyNum int = len(managers)
+		shareNum  int
+		err       error
 	)
 	stdin := bufio.NewScanner(os.Stdin)
 
@@ -100,11 +105,12 @@ func askMinNum(shareNum int) int {
 }
 
 // 各公開鍵の担当シェアを入力
-func askShareManagers(pubKeys []string, shareNum int, minNum int) []int {
+func askShareManagers(managers []keyManager, shareNum int, minNum int) []keyManager {
 
-	pubKeyNum := len(pubKeys)
-	remains := shareNum - pubKeyNum
-	var manageShareNums []int
+	var (
+		pubKeyNum int = len(managers)
+		remains   int = shareNum - pubKeyNum
+	)
 
 	fmt.Println("それぞれの公開鍵が担当するシェアの数を順に入力してください(担当する公開鍵のないシェアの数は閾値未満である必要があります)")
 	for i := 0; i < pubKeyNum; i++ {
@@ -114,20 +120,20 @@ func askShareManagers(pubKeys []string, shareNum int, minNum int) []int {
 		if i != pubKeyNum-1 || 1 > min {
 			min = 1
 		}
-		fmt.Print(pubKeys[i] + "(" + strconv.Itoa(min) + "以上かつ" + strconv.Itoa(max) + "以下) : ")
+		fmt.Print(managers[i].publicKey + "(" + strconv.Itoa(min) + "以上かつ" + strconv.Itoa(max) + "以下) : ")
 		for stdin.Scan() {
-			manageShareNum, err := strconv.Atoi(stdin.Text())
+			input, err := strconv.Atoi(stdin.Text())
 			if err != nil {
 				log.Fatal(err)
 			}
-			if manageShareNum >= min && max >= manageShareNum && manageShareNum > 0 {
-				remains -= (manageShareNum - 1)
-				manageShareNums = append(manageShareNums, manageShareNum)
+			if input >= min && max >= input && input > 0 {
+				remains -= (input - 1)
+				managers[i].manageShareNum = input
 				break
 			}
 			fmt.Print("正しい数を入力してください(" + strconv.Itoa(min) + "以上かつ" + strconv.Itoa(max) + "以下) : ")
 		}
 	}
 
-	return manageShareNums
+	return managers
 }

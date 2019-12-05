@@ -11,6 +11,11 @@ import (
 	"github.com/SSSaaS/sssa-golang"
 )
 
+type keyManager struct {
+	publicKey      string
+	manageShareNum int
+}
+
 func main() {
 	flag.Parse()
 	commands := flag.Arg(0)
@@ -29,13 +34,15 @@ func main() {
 }
 
 func upload(filepath string) {
-	pubKeys := askPubKeys()
-	pubKeyNum := len(pubKeys)
-	shareNum := askShareNum(pubKeyNum)
-	minNum := askMinNum(shareNum)
-	manageShareNums := askShareManagers(pubKeys, shareNum, minNum)
 
-	fmt.Println(manageShareNums)
+	var managers []keyManager
+
+	managers = askPubKeys(managers)
+	shareNum := askShareNum(managers)
+	minNum := askMinNum(shareNum)
+	managers = askShareManagers(managers, shareNum, minNum)
+
+	fmt.Println(managers)
 
 	file, err := os.Open(filepath)
 	if err != nil {
