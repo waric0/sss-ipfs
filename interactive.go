@@ -25,10 +25,10 @@ func askPubKeys() []string {
 				fmt.Println("公開鍵が見つかりません")
 			} else {
 				num := strconv.Itoa(pubKeyNum)
-				fmt.Println("以下" + num + "個の公開鍵を使用します")
+				fmt.Println("以下" + num + "個の公開鍵を使用します(冒頭15文字のみ表示)")
 				for i := 0; i < pubKeyNum; i++ {
 					index := strconv.Itoa(i + 1)
-					fmt.Println(index + " : " + pubKeys[i])
+					fmt.Println("PublicKey" + index + " : " + pubKeys[i][:15] + "...")
 				}
 				break
 			}

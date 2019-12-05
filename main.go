@@ -13,8 +13,22 @@ import (
 
 func main() {
 	flag.Parse()
-	filepath := flag.Arg(0)
+	commands := flag.Arg(0)
+	filepath := flag.Arg(1)
 
+	if commands == "upload" {
+		upload(filepath)
+	} else if commands == "download" {
+		download(filepath)
+	} else {
+		fmt.Printf("エラー : 適切なコマンドを入力してください\n")
+		fmt.Printf("例 : \n")
+		fmt.Printf("  sss-ipfs upload <filepath>\n")
+		fmt.Printf("  sss-ipfs download <filepath>\n")
+	}
+}
+
+func upload(filepath string) {
 	pubKeys := askPubKeys()
 	pubKeyNum := len(pubKeys)
 	shareNum := askShareNum(pubKeyNum)
@@ -54,5 +68,8 @@ func main() {
 			log.Fatal(err)
 		}
 	}
+}
+
+func download(filepath string) {
 
 }
