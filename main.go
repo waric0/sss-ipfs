@@ -1,6 +1,7 @@
 package main
 
 import (
+	"crypto/rsa"
 	"flag"
 	"fmt"
 	"io/ioutil"
@@ -12,7 +13,8 @@ import (
 )
 
 type keyManager struct {
-	publicKey      string
+	fileName       string
+	publicKey      *rsa.PublicKey
 	manageShareNum int
 }
 

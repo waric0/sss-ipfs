@@ -2,46 +2,60 @@ package main
 
 import (
 	"bufio"
+	"crypto/rsa"
+	"crypto/x509"
+	"encoding/pem"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"os"
 	"strconv"
 )
 
-// 暗号化で利用する公開鍵の数を入力
+// 暗号化で利用する公開鍵のkeyファイルを入力
 func askPubKeys(managers []keyManager) []keyManager {
 
 	var pubKeyNum int = len(managers)
 
 	stdin := bufio.NewScanner(os.Stdin)
 
-	fmt.Print("1番目の公開鍵を入力してください(doneで終了) : ")
+	fmt.Print("1番目の公開鍵ファイルのパスを入力してください(doneで終了) : ")
 	for stdin.Scan() {
-		input := stdin.Text()
-		if input == "done" {
+		filePath := stdin.Text()
+		if filePath == "done" {
 			if pubKeyNum == 0 {
-				fmt.Println("公開鍵が見つかりません")
+				fmt.Println("公開鍵が1つも設定されていません")
 			} else {
 				num := strconv.Itoa(pubKeyNum)
-				fmt.Println("以下" + num + "個の公開鍵を使用します(冒頭15文字のみ表示)")
+				fmt.Println("以下" + num + "個の公開鍵ファイルを使用します")
 				for i := 0; i < pubKeyNum; i++ {
-					index := strconv.Itoa(i + 1)
-					pubKey := managers[i].publicKey
-					if len(pubKey) > 15 {
-						fmt.Println("PublicKey" + index + " : " + pubKey[:15] + "...")
-					} else {
-						fmt.Println("PublicKey" + index + " : " + pubKey)
-					}
+					pubKey := managers[i].fileName
+					fmt.Println(pubKey)
 				}
 				break
 			}
 		} else {
-			manager := keyManager{publicKey: input, manageShareNum: 0}
-			managers = append(managers, manager)
-			pubKeyNum = len(managers)
+			fileStat, err := os.Stat(filePath)
+			if err != nil {
+				fmt.Println("公開鍵ファイルの読み込みに失敗しました")
+			} else {
+				file, err := ioutil.ReadFile(filePath)
+				if err != nil {
+					log.Fatal(err)
+				}
+				block, _ := pem.Decode(file)
+				pubKeyInterface, err := x509.ParsePKIXPublicKey(block.Bytes)
+				if err != nil {
+					log.Fatal(err)
+				}
+				pubKey, _ := pubKeyInterface.(*rsa.PublicKey)
+				manager := keyManager{fileName: fileStat.Name(), publicKey: pubKey, manageShareNum: 0}
+				managers = append(managers, manager)
+				pubKeyNum = len(managers)
+			}
 		}
 		index := strconv.Itoa(pubKeyNum + 1)
-		fmt.Print(index + "番目の公開鍵を入力してください(doneで終了) : ")
+		fmt.Print(index + "番目の公開鍵ファイルのパスを入力してください(doneで終了) : ")
 	}
 
 	return managers
@@ -120,7 +134,7 @@ func askShareManagers(managers []keyManager, shareNum int, minNum int) []keyMana
 		if i != pubKeyNum-1 || 1 > min {
 			min = 1
 		}
-		fmt.Print(managers[i].publicKey + "(" + strconv.Itoa(min) + "以上かつ" + strconv.Itoa(max) + "以下) : ")
+		fmt.Print(managers[i].fileName + "(" + strconv.Itoa(min) + "以上かつ" + strconv.Itoa(max) + "以下) : ")
 		for stdin.Scan() {
 			input, err := strconv.Atoi(stdin.Text())
 			if err != nil {
@@ -138,6 +152,7 @@ func askShareManagers(managers []keyManager, shareNum int, minNum int) []keyMana
 	return managers
 }
 
+// アップロードするファイルを入力
 func askFilePath() string {
 	var filePath string
 	stdin := bufio.NewScanner(os.Stdin)
