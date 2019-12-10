@@ -13,9 +13,9 @@ import (
 )
 
 // 暗号化で利用する公開鍵のkeyファイルを入力
-func askPubKeys(managers []keyManager) []keyManager {
+func (s *uploadSetting) askPubKeys() {
 
-	var pubKeyNum int = len(managers)
+	var pubKeyNum int = len(s.managers)
 
 	stdin := bufio.NewScanner(os.Stdin)
 
@@ -29,7 +29,7 @@ func askPubKeys(managers []keyManager) []keyManager {
 				num := strconv.Itoa(pubKeyNum)
 				fmt.Println("以下" + num + "個の公開鍵ファイルを使用します")
 				for i := 0; i < pubKeyNum; i++ {
-					pubKey := managers[i].fileName
+					pubKey := s.managers[i].fileName
 					fmt.Println(pubKey)
 				}
 				break
@@ -50,23 +50,20 @@ func askPubKeys(managers []keyManager) []keyManager {
 				}
 				pubKey, _ := pubKeyInterface.(*rsa.PublicKey)
 				manager := keyManager{fileName: fileStat.Name(), publicKey: pubKey, manageShareNum: 0}
-				managers = append(managers, manager)
-				pubKeyNum = len(managers)
+				s.managers = append(s.managers, manager)
+				pubKeyNum = len(s.managers)
 			}
 		}
 		index := strconv.Itoa(pubKeyNum + 1)
 		fmt.Print(index + "番目の公開鍵ファイルのパスを入力してください(doneで終了) : ")
 	}
-
-	return managers
 }
 
 // 秘密分散法で利用するシェアの数を入力
-func askShareNum(managers []keyManager) int {
+func (s *uploadSetting) askShareNum() {
 
 	var (
-		pubKeyNum int = len(managers)
-		shareNum  int
+		pubKeyNum int = len(s.managers)
 		err       error
 	)
 	stdin := bufio.NewScanner(os.Stdin)
@@ -77,11 +74,11 @@ func askShareNum(managers []keyManager) int {
 		fmt.Print("シェアの数を入力してください(公開鍵の数" + strconv.Itoa(pubKeyNum) + "以上) : ")
 	}
 	for stdin.Scan() {
-		shareNum, err = strconv.Atoi(stdin.Text())
+		s.shareNum, err = strconv.Atoi(stdin.Text())
 		if err != nil {
 			log.Fatal(err)
 		}
-		if shareNum >= pubKeyNum && shareNum > 1 {
+		if s.shareNum >= pubKeyNum && s.shareNum > 1 {
 			break
 		}
 		if 2 > pubKeyNum {
@@ -90,51 +87,44 @@ func askShareNum(managers []keyManager) int {
 			fmt.Print("正しいシェアの数を入力してください(公開鍵の数" + strconv.Itoa(pubKeyNum) + "以上) : ")
 		}
 	}
-
-	return shareNum
 }
 
 // 秘密分散法で利用する閾値の数を入力
-func askMinNum(shareNum int) int {
+func (s *uploadSetting) askMinNum() {
 
-	var (
-		minNum int
-		err    error
-	)
+	var err error
 	stdin := bufio.NewScanner(os.Stdin)
 
-	fmt.Print("閾値を入力してください(2以上かつシェアの数" + strconv.Itoa(shareNum) + "以下) : ")
+	fmt.Print("閾値を入力してください(2以上かつシェアの数" + strconv.Itoa(s.shareNum) + "以下) : ")
 	for stdin.Scan() {
-		minNum, err = strconv.Atoi(stdin.Text())
+		s.minNum, err = strconv.Atoi(stdin.Text())
 		if err != nil {
 			log.Fatal(err)
 		}
-		if shareNum >= minNum && minNum > 1 {
+		if s.shareNum >= s.minNum && s.minNum > 1 {
 			break
 		}
-		fmt.Print("正しい閾値を入力してください(2以上かつシェアの数" + strconv.Itoa(shareNum) + "以下) : ")
+		fmt.Print("正しい閾値を入力してください(2以上かつシェアの数" + strconv.Itoa(s.shareNum) + "以下) : ")
 	}
-
-	return minNum
 }
 
 // 各公開鍵の担当シェアを入力
-func askShareManagers(managers []keyManager, shareNum int, minNum int) []keyManager {
+func (s *uploadSetting) askShareManagers() {
 
 	var (
-		pubKeyNum int = len(managers)
-		remains   int = shareNum - pubKeyNum
+		pubKeyNum int = len(s.managers)
+		remains   int = s.shareNum - pubKeyNum
 	)
 
 	fmt.Println("それぞれの公開鍵が担当するシェアの数を順に入力してください(担当する公開鍵のないシェアの数は閾値未満である必要があります)")
 	for i := 0; i < pubKeyNum; i++ {
 		stdin := bufio.NewScanner(os.Stdin)
 		max := remains + 1
-		min := remains + 1 - (minNum - 1)
+		min := remains + 1 - (s.minNum - 1)
 		if i != pubKeyNum-1 || 1 > min {
 			min = 1
 		}
-		fmt.Print(managers[i].fileName + "(" + strconv.Itoa(min) + "以上かつ" + strconv.Itoa(max) + "以下) : ")
+		fmt.Print(s.managers[i].fileName + "(" + strconv.Itoa(min) + "以上かつ" + strconv.Itoa(max) + "以下) : ")
 		for stdin.Scan() {
 			input, err := strconv.Atoi(stdin.Text())
 			if err != nil {
@@ -142,30 +132,26 @@ func askShareManagers(managers []keyManager, shareNum int, minNum int) []keyMana
 			}
 			if input >= min && max >= input && input > 0 {
 				remains -= (input - 1)
-				managers[i].manageShareNum = input
+				s.managers[i].manageShareNum = input
 				break
 			}
 			fmt.Print("正しい数を入力してください(" + strconv.Itoa(min) + "以上かつ" + strconv.Itoa(max) + "以下) : ")
 		}
 	}
-
-	return managers
 }
 
 // アップロードするファイルを入力
-func askFilePath() string {
-	var filePath string
+func (s *uploadSetting) askFilePath() {
+
 	stdin := bufio.NewScanner(os.Stdin)
 
 	fmt.Print("アップロードするファイルのパスを入力してください : ")
 	for stdin.Scan() {
-		filePath = stdin.Text()
-		_, err := os.Stat(filePath)
+		s.filePath = stdin.Text()
+		_, err := os.Stat(s.filePath)
 		if err == nil {
 			break
 		}
 		fmt.Print("正しいファイルのパスを入力してください : ")
 	}
-
-	return filePath
 }
