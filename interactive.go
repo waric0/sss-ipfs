@@ -147,8 +147,8 @@ func (s *uploadSetting) askFilePath() {
 
 	fmt.Print("アップロードするファイルのパスを入力してください : ")
 	for stdin.Scan() {
-		s.filePath = stdin.Text()
-		_, err := os.Stat(s.filePath)
+		s.readFilePath = stdin.Text()
+		_, err := os.Stat(s.readFilePath)
 		if err == nil {
 			break
 		}
