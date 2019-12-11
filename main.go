@@ -52,6 +52,9 @@ func upload() {
 	// 加工処理
 	s.sssaCreate()
 	s.encrypt()
+
+	// アップロード処理
+	s.addToIPFS()
 }
 
 func download() {
