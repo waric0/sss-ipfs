@@ -13,12 +13,14 @@ type keyManager struct {
 }
 
 type uploadSetting struct {
-	managers      []keyManager
-	shareNum      int
-	minNum        int
-	readFilePath  string
-	writeFilePath string
-	created       []string
+	managers       []keyManager
+	shareNum       int
+	minNum         int
+	cipherShareNum int
+	readFilePath   string
+	tempDirPath    string
+	writeDirPath   string
+	created        []string
 }
 
 func main() {
@@ -41,20 +43,22 @@ func upload() {
 
 	var s uploadSetting
 
-	// 初期設定
+	// 初期設定処理
 	s.askPubKeys()
 	s.askShareNum()
 	s.askMinNum()
 	s.askShareManagers()
 	s.askFilePath()
-	s.mkTempDir()
 
 	// 加工処理
+	s.makeTempDir()
 	s.sssaCreate()
 	s.encrypt()
 
 	// アップロード処理
+	s.makeWriteDir()
 	s.addToIPFS()
+	s.writeConfig()
 }
 
 func download() {
