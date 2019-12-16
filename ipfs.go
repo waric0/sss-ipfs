@@ -3,8 +3,8 @@ package main
 import (
 	"bytes"
 	"crypto/x509"
+	"encoding/json"
 	"encoding/pem"
-	"fmt"
 	"io"
 	"io/ioutil"
 	"log"
@@ -15,6 +15,12 @@ import (
 	"strconv"
 	"strings"
 )
+
+type responseJSON struct {
+	Name string `json:"Name"`
+	Hash string `json:"Hash"`
+	Size string `json:"Size"`
+}
 
 // 出力用ディレクトリ作成
 func (s *uploadSetting) makeWriteDir() {
@@ -35,17 +41,21 @@ func (s *uploadSetting) addToIPFS() {
 		for sIndex := 0; sIndex < s.managers[mIndex].manageShareNum; sIndex++ {
 			index := strconv.Itoa(sIndex + 1)
 			name := strings.Replace(s.managers[mIndex].fileName, ".", "_", -1)
-			apiRequest(s.tempDirPath + "/" + name + "_share" + index)
+			hash := apiRequest(s.tempDirPath + "/" + name + "_share" + index)
+			s.managers[mIndex].config.ManagedHashes = append(s.managers[mIndex].config.ManagedHashes, hash)
 		}
 	}
 	// 非対象シェア
 	for i := s.cipherShareNum; i < s.shareNum; i++ {
 		index := strconv.Itoa(i - s.cipherShareNum + 1)
-		apiRequest(s.tempDirPath + "/un_managed_share" + index)
+		hash := apiRequest(s.tempDirPath + "/un_managed_share" + index)
+		for mIndex := 0; mIndex < len(s.managers); mIndex++ {
+			s.managers[mIndex].config.UnmanagedHashes = append(s.managers[mIndex].config.UnmanagedHashes, hash)
+		}
 	}
 }
 
-func apiRequest(path string) {
+func apiRequest(path string) string {
 	file, err := os.Open(path)
 	if err != nil {
 		log.Fatal(err)
@@ -76,7 +86,12 @@ func apiRequest(path string) {
 	if err != nil {
 		log.Fatal(err)
 	}
-	fmt.Println(string(content))
+	resJSON := new(responseJSON)
+	if err := json.Unmarshal(content, resJSON); err != nil {
+		log.Fatal(err)
+	}
+
+	return resJSON.Hash
 }
 
 // 共有用コンフィグ作成
@@ -96,16 +111,33 @@ func (s *uploadSetting) writeConfig() {
 		if err != nil {
 			log.Fatal(err)
 		}
-		bytes, err := x509.MarshalPKIXPublicKey(s.managers[mIndex].publicKey)
+		pubKeyBytes, err := x509.MarshalPKIXPublicKey(s.managers[mIndex].publicKey)
 		if err != nil {
 			log.Fatal(err)
 		}
 		var block = &pem.Block{
 			Type:  "PUBLIC KEY",
-			Bytes: bytes,
+			Bytes: pubKeyBytes,
 		}
 		pem.Encode(file, block)
 
+		// JSON形式コンフィグファイルの追加
+		for sIndex := 0; sIndex < s.managers[mIndex].manageShareNum; sIndex++ {
+			jsonBytes, err := json.Marshal(s.managers[mIndex].config)
+			if err != nil {
+				log.Fatal(err)
+			}
+			// インデントの整形
+			out := &bytes.Buffer{}
+			json.Indent(out, jsonBytes, "", "    ")
+			writeJSON, err := ioutil.ReadAll(out)
+			if err != nil {
+				log.Fatal(err)
+			}
+			err = ioutil.WriteFile(dirPath+"/config.json", writeJSON, 0755)
+			if err != nil {
+				log.Fatal(err)
+			}
+		}
 	}
-
 }

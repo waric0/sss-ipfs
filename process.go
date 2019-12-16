@@ -72,4 +72,5 @@ func (s *uploadSetting) encrypt() {
 			log.Fatal(err)
 		}
 	}
+	s.created = nil
 }

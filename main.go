@@ -6,10 +6,16 @@ import (
 	"fmt"
 )
 
+type configuration struct {
+	ManagedHashes   []string `json:"encrypted"`
+	UnmanagedHashes []string `json:"unencrypted"`
+}
+
 type keyManager struct {
 	fileName       string
 	publicKey      *rsa.PublicKey
 	manageShareNum int
+	config         configuration
 }
 
 type uploadSetting struct {
