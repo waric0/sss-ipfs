@@ -5,6 +5,7 @@ import (
 	"crypto/x509"
 	"encoding/json"
 	"encoding/pem"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"log"
@@ -38,19 +39,21 @@ func (s *uploadSetting) addToIPFS() {
 
 	// 対象シェア
 	for mIndex := 0; mIndex < len(s.managers); mIndex++ {
+		fmt.Printf("%d / %d\r", mIndex+1, s.shareNum)
 		for sIndex := 0; sIndex < s.managers[mIndex].manageShareNum; sIndex++ {
 			index := strconv.Itoa(sIndex + 1)
 			name := strings.Replace(s.managers[mIndex].fileName, ".", "_", -1)
 			hash := apiRequest(s.tempDirPath + "/" + name + "_share" + index)
-			s.managers[mIndex].config.ManagedHashes = append(s.managers[mIndex].config.ManagedHashes, hash)
+			s.managers[mIndex].config.ManagedShares = append(s.managers[mIndex].config.ManagedShares, hash)
 		}
 	}
 	// 非対象シェア
 	for i := s.cipherShareNum; i < s.shareNum; i++ {
+		fmt.Printf("\r%d / %d", i+1, s.shareNum)
 		index := strconv.Itoa(i - s.cipherShareNum + 1)
 		hash := apiRequest(s.tempDirPath + "/un_managed_share" + index)
 		for mIndex := 0; mIndex < len(s.managers); mIndex++ {
-			s.managers[mIndex].config.UnmanagedHashes = append(s.managers[mIndex].config.UnmanagedHashes, hash)
+			s.managers[mIndex].config.UnmanagedShares = append(s.managers[mIndex].config.UnmanagedShares, hash)
 		}
 	}
 }

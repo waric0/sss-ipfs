@@ -7,8 +7,9 @@ import (
 )
 
 type configuration struct {
-	ManagedHashes   []string `json:"encrypted"`
-	UnmanagedHashes []string `json:"unencrypted"`
+	EncryptedComKey []byte   `json:"encrypted_common_key"`
+	ManagedShares   []string `json:"encrypted_share_cid"`
+	UnmanagedShares []string `json:"unencrypted_share_cid"`
 }
 
 type keyManager struct {
@@ -31,13 +32,14 @@ type uploadSetting struct {
 
 func main() {
 	flag.Parse()
-	commands := flag.Arg(0)
+	command := flag.Arg(0)
 
-	if commands == "upload" {
+	switch command {
+	case "upload":
 		upload()
-	} else if commands == "download" {
+	case "download":
 		download()
-	} else {
+	default:
 		fmt.Printf("エラー : 適切なコマンドを入力してください\n")
 		fmt.Printf("例 : \n")
 		fmt.Printf("  sss-ipfs upload\n")
@@ -57,14 +59,20 @@ func upload() {
 	s.askFilePath()
 
 	// 加工処理
+	fmt.Printf("秘密分散法を実行中\n")
 	s.makeTempDir()
 	s.sssaCreate()
+	fmt.Printf("秘密分散法が完了\n")
+	fmt.Printf("暗号化を実行中\n")
 	s.encrypt()
+	fmt.Printf("\n暗号化が完了\n")
 
 	// アップロード処理
+	fmt.Printf("IPFSへのアップロードを実行中\n")
 	s.makeWriteDir()
 	s.addToIPFS()
 	s.writeConfig()
+	fmt.Printf("\nIPFSへのアップロードが完了\n")
 }
 
 func download() {
