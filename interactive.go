@@ -140,16 +140,58 @@ func (s *uploadSetting) askShareManagers() {
 	}
 }
 
-// アップロードするファイルを入力
-func (s *uploadSetting) askFilePath() {
+// アップロードファイル/コンフィグファイルを入力
+func (s *commonSetting) askFilePath(command string) {
+
+	switch command {
+	case "upload":
+		fmt.Printf("アップロードするファイルのパスを入力してください : ")
+	case "download":
+		fmt.Printf("コンフィグファイルのパスを入力してください : ")
+	}
+	stdin := bufio.NewScanner(os.Stdin)
+	for stdin.Scan() {
+		s.readFilePath = stdin.Text()
+		_, err := os.Stat(s.readFilePath)
+		if err == nil {
+			break
+		}
+		fmt.Printf("正しいファイルのパスを入力してください : ")
+	}
+}
+
+// 復号で利用する秘密鍵のkeyファイルを入力
+func (s *downloadSetting) askPrivKeys() {
 
 	stdin := bufio.NewScanner(os.Stdin)
 
-	fmt.Printf("アップロードするファイルのパスを入力してください : ")
+	fmt.Printf("秘密鍵ファイルのパスを入力してください : ")
 	for stdin.Scan() {
-		s.comSet.readFilePath = stdin.Text()
-		_, err := os.Stat(s.comSet.readFilePath)
-		if err == nil {
+		filePath := stdin.Text()
+		fileStat, err := os.Stat(filePath)
+		if err != nil {
+			fmt.Printf("秘密鍵ファイルの読み込みに失敗しました\n")
+		} else {
+			file, err := ioutil.ReadFile(filePath)
+			if err != nil {
+				log.Fatal(err)
+			}
+			block, _ := pem.Decode(file)
+			var privKey *rsa.PrivateKey
+			switch block.Type {
+			case "RSA PRIVATE KEY":
+				privKey, err = x509.ParsePKCS1PrivateKey(block.Bytes)
+				if err != nil {
+					log.Fatal(err)
+				}
+			default:
+				privKeyInterface, err := x509.ParsePKCS8PrivateKey(block.Bytes)
+				if err != nil {
+					log.Fatal(err)
+				}
+				privKey, _ = privKeyInterface.(*rsa.PrivateKey)
+			}
+			s.manager = keyManager{keyfileName: fileStat.Name(), privateKey: privKey}
 			break
 		}
 		fmt.Printf("正しいファイルのパスを入力してください : ")

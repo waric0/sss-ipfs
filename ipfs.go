@@ -43,7 +43,7 @@ func (s *uploadSetting) addToIPFS() {
 		for sIndex := 0; sIndex < s.managers[mIndex].manageShareNum; sIndex++ {
 			index := strconv.Itoa(sIndex + 1)
 			name := strings.Replace(s.managers[mIndex].keyfileName, ".", "_", -1)
-			hash := apiRequest(s.comSet.tempDirPath + "/" + name + "_share" + index)
+			hash := apiAddRequest(s.comSet.tempDirPath + "/" + name + "_share" + index)
 			s.managers[mIndex].config.ManagedShares = append(s.managers[mIndex].config.ManagedShares, hash)
 		}
 	}
@@ -51,14 +51,14 @@ func (s *uploadSetting) addToIPFS() {
 	for i := s.cipherShareNum; i < s.shareNum; i++ {
 		fmt.Printf("\r%d / %d", i+1, s.shareNum)
 		index := strconv.Itoa(i - s.cipherShareNum + 1)
-		hash := apiRequest(s.comSet.tempDirPath + "/un_managed_share" + index)
+		hash := apiAddRequest(s.comSet.tempDirPath + "/un_managed_share" + index)
 		for mIndex := 0; mIndex < len(s.managers); mIndex++ {
 			s.managers[mIndex].config.UnmanagedShares = append(s.managers[mIndex].config.UnmanagedShares, hash)
 		}
 	}
 }
 
-func apiRequest(path string) string {
+func apiAddRequest(path string) string {
 	file, err := os.Open(path)
 	if err != nil {
 		log.Fatal(err)
@@ -142,5 +142,61 @@ func (s *uploadSetting) writeConfig() {
 				log.Fatal(err)
 			}
 		}
+	}
+}
+
+// コンフィグ読み取り
+func (s *downloadSetting) readConfig() {
+
+	file, err := os.Open(s.comSet.readFilePath)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer file.Close()
+	raw, err := ioutil.ReadAll(file)
+	if err != nil {
+		log.Fatal(err)
+	}
+	configJSON := new(configuration)
+	if err := json.Unmarshal(raw, configJSON); err != nil {
+		log.Fatal(err)
+	}
+	s.manager.config = *configJSON
+}
+
+// IPFSからダウンロード
+func (s *downloadSetting) getFromIPFS() {
+	for i := 0; i < len(s.manager.config.ManagedShares); i++ {
+		apiCatRequest(s.manager.config.ManagedShares[i])
+	}
+	for i := 0; i < len(s.manager.config.UnmanagedShares); i++ {
+		apiCatRequest(s.manager.config.UnmanagedShares[i])
+	}
+}
+
+func apiCatRequest(cid string) {
+
+	request, err := http.NewRequest("GET", "http://localhost:5001/api/v0/cat", nil)
+	if err != nil {
+		log.Fatal(err)
+	}
+	params := request.URL.Query()
+	params.Add("arg", cid)
+	request.URL.RawQuery = params.Encode()
+
+	request.Header.Add("Content-Type", "text/plain")
+	client := &http.Client{}
+	response, err := client.Do(request)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer response.Body.Close()
+	content, err := ioutil.ReadAll(response.Body)
+	if err != nil {
+		log.Fatal(err)
+	}
+	err = ioutil.WriteFile("./temp/"+cid, content, 0755)
+	if err != nil {
+		log.Fatal(err)
 	}
 }

@@ -66,7 +66,7 @@ func upload() {
 	s.askShareNum()
 	s.askMinNum()
 	s.askShareManagers()
-	s.askFilePath()
+	s.comSet.askFilePath("upload")
 
 	// 加工処理
 	fmt.Printf("秘密分散法を実行中\n")
@@ -86,5 +86,18 @@ func upload() {
 }
 
 func download() {
+
+	var s downloadSetting
+
+	// 初期設定処理
+	s.askPrivKeys()
+	s.comSet.askFilePath("download")
+
+	// ダウンロード処理
+	fmt.Printf("IPFSからのダウンロードを実行中\n")
+	s.comSet.makeTempDir()
+	s.readConfig()
+	s.getFromIPFS()
+	fmt.Printf("\nIPFSからのダウンロードが完了\n")
 
 }
