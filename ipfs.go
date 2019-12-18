@@ -24,7 +24,7 @@ type responseJSON struct {
 }
 
 // 出力用ディレクトリ作成
-func (s *uploadSetting) makeWriteDir() {
+func (s *commonSetting) makeWriteDir() {
 	s.writeDirPath = "outputs"
 	if _, err := os.Stat(s.writeDirPath); os.IsNotExist(err) {
 		err = os.Mkdir(s.writeDirPath, 0755)
@@ -42,8 +42,8 @@ func (s *uploadSetting) addToIPFS() {
 		fmt.Printf("%d / %d\r", mIndex+1, s.shareNum)
 		for sIndex := 0; sIndex < s.managers[mIndex].manageShareNum; sIndex++ {
 			index := strconv.Itoa(sIndex + 1)
-			name := strings.Replace(s.managers[mIndex].fileName, ".", "_", -1)
-			hash := apiRequest(s.tempDirPath + "/" + name + "_share" + index)
+			name := strings.Replace(s.managers[mIndex].keyfileName, ".", "_", -1)
+			hash := apiRequest(s.comSet.tempDirPath + "/" + name + "_share" + index)
 			s.managers[mIndex].config.ManagedShares = append(s.managers[mIndex].config.ManagedShares, hash)
 		}
 	}
@@ -51,7 +51,7 @@ func (s *uploadSetting) addToIPFS() {
 	for i := s.cipherShareNum; i < s.shareNum; i++ {
 		fmt.Printf("\r%d / %d", i+1, s.shareNum)
 		index := strconv.Itoa(i - s.cipherShareNum + 1)
-		hash := apiRequest(s.tempDirPath + "/un_managed_share" + index)
+		hash := apiRequest(s.comSet.tempDirPath + "/un_managed_share" + index)
 		for mIndex := 0; mIndex < len(s.managers); mIndex++ {
 			s.managers[mIndex].config.UnmanagedShares = append(s.managers[mIndex].config.UnmanagedShares, hash)
 		}
@@ -101,8 +101,8 @@ func apiRequest(path string) string {
 func (s *uploadSetting) writeConfig() {
 	for mIndex := 0; mIndex < len(s.managers); mIndex++ {
 		// 各管理者用のディレクトリ作成
-		dirName := strings.Replace(s.managers[mIndex].fileName, ".", "_", -1)
-		dirPath := s.writeDirPath + "/" + dirName
+		dirName := strings.Replace(s.managers[mIndex].keyfileName, ".", "_", -1)
+		dirPath := s.comSet.writeDirPath + "/" + dirName
 		if _, err := os.Stat(dirPath); os.IsNotExist(err) {
 			err = os.Mkdir(dirPath, 0755)
 			if err != nil {

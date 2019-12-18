@@ -13,10 +13,17 @@ type configuration struct {
 }
 
 type keyManager struct {
-	fileName       string
+	keyfileName    string
 	publicKey      *rsa.PublicKey
+	privateKey     *rsa.PrivateKey
 	manageShareNum int
 	config         configuration
+}
+
+type commonSetting struct {
+	readFilePath string
+	tempDirPath  string
+	writeDirPath string
 }
 
 type uploadSetting struct {
@@ -24,10 +31,13 @@ type uploadSetting struct {
 	shareNum       int
 	minNum         int
 	cipherShareNum int
-	readFilePath   string
-	tempDirPath    string
-	writeDirPath   string
 	created        []string
+	comSet         commonSetting
+}
+
+type downloadSetting struct {
+	manager keyManager
+	comSet  commonSetting
 }
 
 func main() {
@@ -60,7 +70,7 @@ func upload() {
 
 	// 加工処理
 	fmt.Printf("秘密分散法を実行中\n")
-	s.makeTempDir()
+	s.comSet.makeTempDir()
 	s.sssaCreate()
 	fmt.Printf("秘密分散法が完了\n")
 	fmt.Printf("暗号化を実行中\n")
@@ -69,7 +79,7 @@ func upload() {
 
 	// アップロード処理
 	fmt.Printf("IPFSへのアップロードを実行中\n")
-	s.makeWriteDir()
+	s.comSet.makeWriteDir()
 	s.addToIPFS()
 	s.writeConfig()
 	fmt.Printf("\nIPFSへのアップロードが完了\n")

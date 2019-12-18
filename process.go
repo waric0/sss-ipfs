@@ -18,7 +18,7 @@ import (
 )
 
 // 一時ディレクトリ作成
-func (s *uploadSetting) makeTempDir() {
+func (s *commonSetting) makeTempDir() {
 	s.tempDirPath = "temp"
 	if _, err := os.Stat(s.tempDirPath); os.IsNotExist(err) {
 		err = os.Mkdir(s.tempDirPath, 0755)
@@ -31,7 +31,7 @@ func (s *uploadSetting) makeTempDir() {
 // 秘密分散法
 func (s *uploadSetting) sssaCreate() {
 
-	file, err := os.Open(s.readFilePath)
+	file, err := os.Open(s.comSet.readFilePath)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -75,8 +75,8 @@ func (s *uploadSetting) encrypt() {
 			cipherContent := gcm.Seal(nil, nonce, content, nil)
 			cipherContent = append(nonce, cipherContent...)
 			index := strconv.Itoa(sIndex + 1)
-			name := strings.Replace(s.managers[mIndex].fileName, ".", "_", -1)
-			err = ioutil.WriteFile(s.tempDirPath+"/"+name+"_share"+index, cipherContent, 0755)
+			name := strings.Replace(s.managers[mIndex].keyfileName, ".", "_", -1)
+			err = ioutil.WriteFile(s.comSet.tempDirPath+"/"+name+"_share"+index, cipherContent, 0755)
 			if err != nil {
 				log.Fatal(err)
 			}
@@ -95,7 +95,7 @@ func (s *uploadSetting) encrypt() {
 	// 非対象シェア
 	for i := s.cipherShareNum; i < s.shareNum; i++ {
 		index := strconv.Itoa(i - s.cipherShareNum + 1)
-		err := ioutil.WriteFile(s.tempDirPath+"/un_managed_share"+index, []byte(s.created[i]), 0755)
+		err := ioutil.WriteFile(s.comSet.tempDirPath+"/un_managed_share"+index, []byte(s.created[i]), 0755)
 		if err != nil {
 			log.Fatal(err)
 		}

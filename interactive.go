@@ -29,7 +29,7 @@ func (s *uploadSetting) askPubKeys() {
 				num := strconv.Itoa(pubKeyNum)
 				fmt.Printf("以下" + num + "個の公開鍵ファイルを使用します\n")
 				for i := 0; i < pubKeyNum; i++ {
-					pubKey := s.managers[i].fileName
+					pubKey := s.managers[i].keyfileName
 					fmt.Printf("%s\n", pubKey)
 				}
 				break
@@ -49,7 +49,7 @@ func (s *uploadSetting) askPubKeys() {
 					log.Fatal(err)
 				}
 				pubKey, _ := pubKeyInterface.(*rsa.PublicKey)
-				manager := keyManager{fileName: fileStat.Name(), publicKey: pubKey, manageShareNum: 0}
+				manager := keyManager{keyfileName: fileStat.Name(), publicKey: pubKey, manageShareNum: 0}
 				s.managers = append(s.managers, manager)
 				pubKeyNum = len(s.managers)
 			}
@@ -123,7 +123,7 @@ func (s *uploadSetting) askShareManagers() {
 		if i != pubKeyNum-1 || 1 > min {
 			min = 1
 		}
-		fmt.Printf("%s(%d以上かつ%d以下) : ", s.managers[i].fileName, min, max)
+		fmt.Printf("%s(%d以上かつ%d以下) : ", s.managers[i].keyfileName, min, max)
 		for stdin.Scan() {
 			input, err := strconv.Atoi(stdin.Text())
 			if err != nil {
@@ -147,8 +147,8 @@ func (s *uploadSetting) askFilePath() {
 
 	fmt.Printf("アップロードするファイルのパスを入力してください : ")
 	for stdin.Scan() {
-		s.readFilePath = stdin.Text()
-		_, err := os.Stat(s.readFilePath)
+		s.comSet.readFilePath = stdin.Text()
+		_, err := os.Stat(s.comSet.readFilePath)
 		if err == nil {
 			break
 		}
