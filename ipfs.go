@@ -167,9 +167,12 @@ func (s *downloadSetting) readConfig() {
 // IPFSからダウンロード
 func (s *downloadSetting) getFromIPFS() {
 	for i := 0; i < len(s.manager.config.ManagedShares); i++ {
+		fmt.Printf("\r%d / %d", i+1, len(s.manager.config.ManagedShares))
 		apiCatRequest(s.manager.config.ManagedShares[i])
 	}
+	fmt.Printf("\n")
 	for i := 0; i < len(s.manager.config.UnmanagedShares); i++ {
+		fmt.Printf("\r%d / %d", i+1, len(s.manager.config.UnmanagedShares))
 		apiCatRequest(s.manager.config.UnmanagedShares[i])
 	}
 }

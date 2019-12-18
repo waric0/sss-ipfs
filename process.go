@@ -28,7 +28,7 @@ func (s *commonSetting) makeTempDir() {
 	}
 }
 
-// 秘密分散法
+// 秘密分散法適用
 func (s *uploadSetting) sssaCreate() {
 
 	file, err := os.Open(s.comSet.readFilePath)
@@ -41,7 +41,7 @@ func (s *uploadSetting) sssaCreate() {
 		log.Fatal(err)
 	}
 
-	s.created, err = sssa.Create(s.minNum, s.shareNum, string(raw))
+	s.comSet.shares, err = sssa.Create(s.minNum, s.shareNum, string(raw))
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -71,7 +71,7 @@ func (s *uploadSetting) encrypt() {
 			if err != nil {
 				log.Fatal(err)
 			}
-			content := []byte(s.created[cipherShareNum])
+			content := []byte(s.comSet.shares[cipherShareNum])
 			cipherContent := gcm.Seal(nil, nonce, content, nil)
 			cipherContent = append(nonce, cipherContent...)
 			index := strconv.Itoa(sIndex + 1)
@@ -95,12 +95,12 @@ func (s *uploadSetting) encrypt() {
 	// 非対象シェア
 	for i := s.cipherShareNum; i < s.shareNum; i++ {
 		index := strconv.Itoa(i - s.cipherShareNum + 1)
-		err := ioutil.WriteFile(s.comSet.tempDirPath+"/un_managed_share"+index, []byte(s.created[i]), 0755)
+		err := ioutil.WriteFile(s.comSet.tempDirPath+"/un_managed_share"+index, []byte(s.comSet.shares[i]), 0755)
 		if err != nil {
 			log.Fatal(err)
 		}
 	}
-	s.created = nil
+	s.comSet.shares = nil
 }
 
 // 共通鍵の生成
@@ -115,4 +115,72 @@ func genComKey() []byte {
 		key = append(key, keyGen)
 	}
 	return key
+}
+
+// 復号
+func (s *downloadSetting) dencrypt() {
+
+	// 共通鍵を秘密鍵で復号
+	rng := rand.Reader
+	plainComKey, err := rsa.DecryptOAEP(sha256.New(), rng, s.manager.privateKey, s.manager.config.EncryptedComKey, []byte(""))
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	// 各シェアを共通鍵で復号
+	for i := 0; i < len(s.manager.config.ManagedShares); i++ {
+		fmt.Printf("\r%d / %d", i+1, len(s.manager.config.ManagedShares))
+
+		file, err := os.Open(s.comSet.tempDirPath + "/" + s.manager.config.ManagedShares[i])
+		if err != nil {
+			log.Fatal(err)
+		}
+		defer file.Close()
+		raw, err := ioutil.ReadAll(file)
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		block, err := aes.NewCipher(plainComKey)
+		if err != nil {
+			log.Fatal(err)
+		}
+		gcm, err := cipher.NewGCM(block)
+		if err != nil {
+			log.Fatal(err)
+		}
+		nonce := raw[:gcm.NonceSize()]
+		plainByte, err := gcm.Open(nil, nonce, raw[gcm.NonceSize():], nil)
+		if err != nil {
+			log.Fatal(err)
+		}
+		s.comSet.shares = append(s.comSet.shares, string(plainByte))
+	}
+
+	// 非対象シェア
+	for i := 0; i < len(s.manager.config.UnmanagedShares); i++ {
+		file, err := os.Open(s.comSet.tempDirPath + "/" + s.manager.config.UnmanagedShares[i])
+		if err != nil {
+			log.Fatal(err)
+		}
+		defer file.Close()
+		raw, err := ioutil.ReadAll(file)
+		if err != nil {
+			log.Fatal(err)
+		}
+		s.comSet.shares = append(s.comSet.shares, string(raw))
+	}
+}
+
+// 秘密分散法復元
+func (s *downloadSetting) sssaCombine() {
+	combined, err := sssa.Combine(s.comSet.shares)
+	if err != nil {
+		log.Fatal(err)
+	}
+	s.comSet.shares = nil
+	err = ioutil.WriteFile(s.comSet.writeDirPath+"/content", []byte(combined), 0755)
+	if err != nil {
+		log.Fatal(err)
+	}
 }

@@ -24,6 +24,7 @@ type commonSetting struct {
 	readFilePath string
 	tempDirPath  string
 	writeDirPath string
+	shares       []string
 }
 
 type uploadSetting struct {
@@ -31,7 +32,6 @@ type uploadSetting struct {
 	shareNum       int
 	minNum         int
 	cipherShareNum int
-	created        []string
 	comSet         commonSetting
 }
 
@@ -100,4 +100,12 @@ func download() {
 	s.getFromIPFS()
 	fmt.Printf("\nIPFSからのダウンロードが完了\n")
 
+	// 復元処理
+	fmt.Printf("復号を実行中\n")
+	s.dencrypt()
+	fmt.Printf("\n復号が完了\n")
+	fmt.Printf("秘密分散法の復元を実行中\n")
+	s.comSet.makeWriteDir()
+	s.sssaCombine()
+	fmt.Printf("秘密分散法の復元が完了\n")
 }
