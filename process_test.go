@@ -11,15 +11,14 @@ import (
 	"github.com/SSSaaS/sssa-golang"
 )
 
-var shareNum int = 3
-var ddArgs = []string{
-	"if=/dev/zero",
-	"of=./temp/sample_file",
-	"bs=100",
-	"count=1",
-}
-
 func BenchmarkSssa(b *testing.B) {
+	var shareNum int = 3
+	var ddArgs = []string{
+		"if=/dev/zero",
+		"of=./temp/sample_file",
+		"bs=100",
+		"count=1",
+	}
 	if _, err := os.Stat("temp"); os.IsNotExist(err) {
 		err = os.Mkdir("temp", 0755)
 		if err != nil {
@@ -51,6 +50,13 @@ func BenchmarkSssa(b *testing.B) {
 }
 
 func BenchmarkWriteFile(b *testing.B) {
+	var shareNum int = 3
+	var ddArgs = []string{
+		"if=/dev/zero",
+		"of=./temp/sample_file",
+		"bs=100",
+		"count=1",
+	}
 	if _, err := os.Stat("temp"); os.IsNotExist(err) {
 		err = os.Mkdir("temp", 0755)
 		if err != nil {
