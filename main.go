@@ -102,7 +102,7 @@ func download() {
 
 	// 復元処理
 	fmt.Printf("復号を実行中\n")
-	s.dencrypt()
+	s.decrypt()
 	fmt.Printf("\n復号が完了\n")
 	fmt.Printf("秘密分散法の復元を実行中\n")
 	s.comSet.makeWriteDir()

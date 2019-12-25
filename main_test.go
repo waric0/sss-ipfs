@@ -176,7 +176,7 @@ func BenchmarkDecrypt(b *testing.B) {
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		s.dencrypt()
+		s.decrypt()
 	}
 	b.StopTimer()
 
@@ -191,7 +191,7 @@ func BenchmarkSssaCombine(b *testing.B) {
 	s.comSet.makeTempDir()
 	s.readConfig()
 	s.getFromIPFS()
-	s.dencrypt()
+	s.decrypt()
 	s.comSet.makeWriteDir()
 
 	b.ResetTimer()
@@ -214,7 +214,7 @@ func BenchmarkDownload(b *testing.B) {
 		s.comSet.makeTempDir()
 		s.readConfig()
 		s.getFromIPFS()
-		s.dencrypt()
+		s.decrypt()
 		s.comSet.makeWriteDir()
 		s.sssaCombine()
 	}

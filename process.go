@@ -118,7 +118,7 @@ func genComKey() []byte {
 }
 
 // 復号
-func (s *downloadSetting) dencrypt() {
+func (s *downloadSetting) decrypt() {
 
 	// 共通鍵を秘密鍵で復号
 	rng := rand.Reader
